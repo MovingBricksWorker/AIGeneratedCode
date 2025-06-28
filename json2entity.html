@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Json2Entity</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #f2f4f8;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            width: 100vw;
+        }
+        .toolbar {
+            width: 100vw;
+            max-width: 100vw;
+            padding: 0 0 0 0;
+            background: #fff;
+            box-shadow: 0 1px 10px #0001;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .toolbar-container {
+            width: 100%;
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            padding: 0 32px;
+            height: 64px;
+        }
+        .toolbar label {
+            font-size: 1.1rem;
+            margin-right: 10px;
+            color: #222;
+        }
+        .toolbar select {
+            font-size: 1.08rem;
+            padding: 7px 18px;
+            border-radius: 7px;
+            border: 1.5px solid #bbb;
+            background: #fcfcfc;
+            margin-right: 28px;
+        }
+        .toolbar .desc {
+            color: #888;
+            font-size: 1.03rem;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: stretch;
+            max-width: 1800px;
+            margin: 36px auto 0 auto;
+            gap: 38px;
+            height: calc(100vh - 92px);
+        }
+        .panel {
+            flex: 1;
+            min-width: 410px;
+            display: flex;
+            flex-direction: column;
+            border-radius: 18px;
+            box-shadow: 0 2px 16px #0001;
+            background: #fff;
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .input-area,
+        .output-area {
+            padding: 28px 24px 24px 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        textarea {
+            width: 100%;
+            min-height: 380px;
+            height: 100%;
+            resize: none;
+            font-family: 'Fira Mono', 'Consolas', 'Menlo', 'monospace';
+            font-size: 1.17rem;
+            line-height: 1.62;
+            background: #f7f9fa;
+            border: 1.5px solid #e0e2e8;
+            border-radius: 10px;
+            padding: 18px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border .2s;
+        }
+        textarea:focus {
+            border: 1.5px solid #2196f3;
+            background: #f4faff;
+        }
+        .output-area {
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+            background: #e3e7efcc;
+            color: #222;
+            border: none;
+            border-radius: 7px;
+            padding: 7px 22px 7px 36px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background .18s, color .18s;
+            box-shadow: 0 2px 8px #2196f322;
+            outline: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='none' height='20' viewBox='0 0 20 20' width='20' xmlns='http://www.w3.org/2000/svg'><rect fill='white' height='20' rx='5' width='20'/><rect height='10' rx='2' stroke='%23445' stroke-width='1.5' width='10' x='5' y='7'/><rect height='10' rx='2' stroke='%23999' stroke-width='1.2' width='10' x='7' y='3'/></svg>");
+            background-repeat: no-repeat;
+            background-position: 12px center;
+        }
+        .copy-btn:hover, .copy-btn:focus {
+            background: #2196f3;
+            color: #fff;
+        }
+        .copied-tip {
+            position: absolute;
+            top: 13px;
+            right: 150px;
+            color: #43a047;
+            font-size: 1.09rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.23s;
+        }
+        .copied-tip.show {
+            opacity: 1;
+        }
+        .download-btn {
+            margin-top: 14px;
+            margin-bottom: 0;
+            align-self: flex-end;
+            background: #2196f3;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 8px 24px;
+            font-size: 1.09rem;
+            cursor: pointer;
+            box-shadow: 0 1.5px 8px #2196f333;
+            outline: none;
+            transition: background .18s;
+        }
+        .download-btn:hover, .download-btn:focus {
+            background: #1769aa;
+        }
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-content { flex-direction: column; gap: 20px; height: auto; }
+            .panel { min-width: 0; }
+        }
+        @media (max-width: 700px) {
+            .toolbar-container { padding: 0 8px; }
+            .main-content { gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="toolbar-container">
+            <label for="lang">语言:</label>
+            <select id="lang">
+                <option value="objc">Objective-C</option>
+                <option value="swift">Swift</option>
+                <option value="java">Java</option>
+                <option value="dart">Dart</option>
+            </select>
+            <span class="desc">JSON转实体工具，支持四种语言，输入左侧自动生成右侧代码</span>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="panel">
+            <div class="input-area">
+                <textarea id="jsonInput" placeholder='在此粘贴你的 JSON 数据...'></textarea>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="output-area">
+                <button class="copy-btn" id="copyBtn">复制代码</button>
+                <span class="copied-tip" id="copiedTip">已复制!</span>
+                <textarea id="codeOutput" readonly placeholder='生成的模型实体代码将显示在这里'></textarea>
+                <button class="download-btn" id="downloadBtn">下载代码</button>
+            </div>
+        </div>
+    </div>
+<script>
+function getType(val) {
+    if (val === null) return 'any';
+    if (Array.isArray(val)) return 'array';
+    return typeof val;
+}
+function upperFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// ObjC
+function genObjCProps(obj, className = 'Model') {
+    let props = [], classes = [];
+    for (let key in obj) {
+        let val = obj[key];
+        let type = getType(val);
+        let propLine;
+        if (type === 'string') propLine = `@property (nonatomic, copy) NSString *${key};`;
+        else if (type === 'number') propLine = `@property (nonatomic, strong) NSNumber *${key};`;
+        else if (type === 'boolean') propLine = `@property (nonatomic, assign) BOOL ${key};`;
+        else if (type === 'array') {
+            let arrType = (val.length > 0) ? getType(val[0]) : 'any';
+            if (arrType === 'object') {
+                let subClass = upperFirst(key) + 'Item';
+                propLine = `@property (nonatomic, strong) NSArray<${subClass} *> *${key};`;
+                classes.push(genObjCProps(val[0], subClass));
+            } else {
+                propLine = `@property (nonatomic, strong) NSArray *${key};`;
+            }
+        }
+        else if (type === 'object') {
+            let subClass = upperFirst(key);
+            propLine = `@property (nonatomic, strong) ${subClass} *${key};`;
+            classes.push(genObjCProps(val, subClass));
+        }
+        else propLine = `@property (nonatomic, strong) id ${key};`;
+        props.push(propLine);
+    }
+    let classDef = `@interface ${className} : NSObject\n${props.map(p=>'    '+p).join('\n')}\n@end`;
+    return classes.concat([classDef]).join('\n\n');
+}
+
+// Swift
+function genSwiftProps(obj, className = 'Model') {
+    let props = [], classes = [];
+    for (let key in obj) {
+        let val = obj[key];
+        let type = getType(val);
+        let swiftType;
+        if (type === 'string') swiftType = 'String';
+        else if (type === 'number') swiftType = 'Double';
+        else if (type === 'boolean') swiftType = 'Bool';
+        else if (type === 'array') {
+            let arrType = (val.length > 0) ? getType(val[0]) : 'Any';
+            if (arrType === 'object') {
+                let subClass = upperFirst(key) + 'Item';
+                swiftType = `[${subClass}]`;
+                classes.push(genSwiftProps(val[0], subClass));
+            } else {
+                swiftType = '[Any]';
+            }
+        }
+        else if (type === 'object') {
+            let subClass = upperFirst(key);
+            swiftType = subClass;
+            classes.push(genSwiftProps(val, subClass));
+        }
+        else swiftType = 'Any';
+        props.push(`    var ${key}: ${swiftType}?`);
+    }
+    let classDef = `class ${className}: Codable {\n${props.join('\n')}\n}`;
+    return classes.concat([classDef]).join('\n\n');
+}
+
+// Java
+function genJavaProps(obj, className = 'Model') {
+    let props = [], classes = [];
+    for (let key in obj) {
+        let val = obj[key];
+        let type = getType(val);
+        let javaType;
+        if (type === 'string') javaType = 'String';
+        else if (type === 'number') javaType = 'Double';
+        else if (type === 'boolean') javaType = 'boolean';
+        else if (type === 'array') {
+            let arrType = (val.length > 0) ? getType(val[0]) : 'Object';
+            if (arrType === 'object') {
+                let subClass = upperFirst(key) + "Item";
+                javaType = `List<${subClass}>`;
+                classes.push(genJavaProps(val[0], subClass));
+            } else {
+                javaType = 'List<Object>';
+            }
+        }
+        else if (type === 'object') {
+            let subClass = upperFirst(key);
+            javaType = subClass;
+            classes.push(genJavaProps(val, subClass));
+        }
+        else javaType = 'Object';
+        props.push(`    public ${javaType} ${key};`);
+    }
+    let classDef = `public class ${className} {\n${props.join('\n')}\n}`;
+    return classes.concat([classDef]).join('\n\n');
+}
+
+// Dart
+function genDartProps(obj, className = 'Model') {
+    let props = [], classes = [];
+    for (let key in obj) {
+        let val = obj[key];
+        let type = getType(val);
+        let dartType;
+        if (type === 'string') dartType = 'String';
+        else if (type === 'number') dartType = 'num';
+        else if (type === 'boolean') dartType = 'bool';
+        else if (type === 'array') {
+            let arrType = (val.length > 0) ? getType(val[0]) : 'dynamic';
+            if (arrType === 'object') {
+                let subClass = upperFirst(key) + 'Item';
+                dartType = `List<${subClass}>`;
+                classes.push(genDartProps(val[0], subClass));
+            } else {
+                dartType = 'List<dynamic>';
+            }
+        }
+        else if (type === 'object') {
+            let subClass = upperFirst(key);
+            dartType = subClass;
+            classes.push(genDartProps(val, subClass));
+        }
+        else dartType = 'dynamic';
+        props.push(`  ${dartType}? ${key};`);
+    }
+    let classDef = `class ${className} {\n${props.join('\n')}\n  ${className}();\n}`;
+    return classes.concat([classDef]).join('\n\n');
+}
+
+// 主生成函数
+function generateModelCode(json, lang) {
+    if (json.trim() === '') return '';
+    let obj;
+    try {
+        obj = JSON.parse(json);
+        if (Array.isArray(obj)) obj = obj[0] || {};
+    } catch {
+        return '// JSON格式错误，请检查输入';
+    }
+    if (lang === 'objc') return genObjCProps(obj, 'Model');
+    if (lang === 'swift') return genSwiftProps(obj, 'Model');
+    if (lang === 'java') return genJavaProps(obj, 'Model');
+    if (lang === 'dart') return genDartProps(obj, 'Model');
+    return '';
+}
+
+// DOM
+const jsonInput = document.getElementById('jsonInput');
+const codeOutput = document.getElementById('codeOutput');
+const langSelector = document.getElementById('lang');
+const copyBtn = document.getElementById('copyBtn');
+const copiedTip = document.getElementById('copiedTip');
+const downloadBtn = document.getElementById('downloadBtn');
+
+function refreshCode() {
+    const json = jsonInput.value;
+    const lang = langSelector.value;
+    codeOutput.value = generateModelCode(json, lang);
+}
+jsonInput.addEventListener('input', refreshCode);
+langSelector.addEventListener('change', refreshCode);
+
+// 复制按钮逻辑
+copyBtn.addEventListener('click', function () {
+    codeOutput.select();
+    document.execCommand('copy');
+    copiedTip.classList.add('show');
+    setTimeout(()=>copiedTip.classList.remove('show'), 1200);
+});
+
+// 下载按钮逻辑
+downloadBtn.addEventListener('click', function () {
+    const lang = langSelector.value;
+    let ext = 'txt';
+    if (lang === 'objc') ext = 'h';
+    else if (lang === 'swift') ext = 'swift';
+    else if (lang === 'java') ext = 'java';
+    else if (lang === 'dart') ext = 'dart';
+    const modelName = 'Model'; // 可自定义
+    const filename = modelName + '.' + ext;
+    const blob = new Blob([codeOutput.value], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+});
+
+// 示例数据
+jsonInput.value = `{
+  "userId": 123,
+  "userName": "张三",
+  "isVip": true,
+  "score": 99.5,
+  "address": {
+    "city": "北京",
+    "zip": "100000"
+  },
+  "tags": ["学生", "会员"],
+  "orders": [
+    {
+      "orderId": "A001",
+      "amount": 88.8
+    }
+  ]
+}`;
+refreshCode();
+</script>
+</body>
+</html>

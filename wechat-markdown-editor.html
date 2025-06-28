@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信公众号 Markdown 编辑器</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/dist/highlight.min.js"></script>
+    <style>
+        /* --- 整体布局 --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        .editor, .preview-container {
+            width: 50%;
+            height: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .editor {
+            padding: 20px;
+            border-right: 1px solid #ddd;
+        }
+        #markdown-input {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            box-sizing: border-box;
+        }
+        .preview-container {
+            position: relative;
+            padding: 20px;
+        }
+        #copy-button {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #07c160;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 10;
+            transition: background-color 0.3s;
+        }
+        #copy-button:hover {
+            background-color: #06ad56;
+        }
+
+        /* --- 微信公众号排版样式 --- */
+        #preview {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            /* 以下是核心排版样式 */
+            line-height: 1.75em;
+            letter-spacing: 0.05em;
+            font-size: 16px;
+        }
+        #preview h1, #preview h2, #preview h3, #preview h4, #preview h5, #preview h6 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        #preview h1 { font-size: 24px; border-bottom: 2px solid #eee; }
+        #preview h2 { font-size: 22px; border-bottom: 1px solid #eee; }
+        #preview h3 { font-size: 20px; }
+        #preview h4 { font-size: 18px; }
+        #preview p {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        #preview a {
+            color: #576b95;
+            text-decoration: none;
+            border-bottom: 1px solid #576b95;
+        }
+        #preview ul, #preview ol {
+            padding-left: 25px;
+            margin-bottom: 20px;
+        }
+        #preview li {
+            margin-bottom: 10px;
+        }
+        #preview blockquote {
+            border-left: 4px solid #ddd;
+            padding: 10px 15px;
+            margin: 20px 0;
+            color: #666;
+            background-color: #f9f9f9;
+        }
+        #preview code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
+            background-color: rgba(27,31,35,0.05);
+            border-radius: 3px;
+        }
+        #preview pre {
+            padding: 16px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #f6f8fa;
+            border-radius: 3px;
+        }
+        #preview pre code {
+            padding: 0;
+            margin: 0;
+            background-color: transparent;
+            border: none;
+        }
+        #preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        #preview th, #preview td {
+            border: 1px solid #dfe2e5;
+            padding: 6px 13px;
+        }
+        #preview th {
+            font-weight: bold;
+            background-color: #f6f8fa;
+        }
+        #preview img {
+            max-width: 100%;
+            border-radius: 5px;
+            display: block;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="editor">
+            <textarea id="markdown-input" placeholder="请在此处输入 Markdown 内容..."></textarea>
+        </div>
+
+        <div class="preview-container">
+            <button id="copy-button">一键复制</button>
+            <div id="preview">
+                <h1>欢迎使用！</h1>
+                <p>请在左侧编辑区输入您的 Markdown 内容，右侧将实时展示排版后的效果。</p>
+                <p>完成后，点击右上角的 <strong>“一键复制”</strong> 按钮，然后粘贴到微信公众号后台即可。</p>
+                <hr>
+                <h2>示例：代码块</h2>
+                <p>使用 highlight.js 进行代码高亮：</p>
+                <pre><code class="language-javascript">
+function greet() {
+  console.log("Hello, world!");
+}
+greet();
+                </code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素获取
+        const markdownInput = document.getElementById('markdown-input');
+        const preview = document.getElementById('preview');
+        const copyButton = document.getElementById('copy-button');
+
+        // 配置 marked.js 和 highlight.js
+        marked.setOptions({
+            renderer: new marked.Renderer(),
+            gfm: true,
+            tables: true,
+            breaks: false,
+            pedantic: false,
+            sanitize: false,
+            smartLists: true,
+            smartypants: false,
+            // 配置代码高亮
+            highlight: function (code, lang) {
+                // 如果指定了语言，则使用 highlight.js 进行高亮
+                // hljs 对象现在由我们引入的正确脚本提供
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            }
+        });
+
+        /**
+         * 渲染函数：将 Markdown 转换为 HTML 并更新预览区域
+         */
+        function render() {
+            const markdownText = markdownInput.value;
+            preview.innerHTML = marked.parse(markdownText || markdownInput.placeholder);
+        }
+
+        /**
+         * 复制函数：将预览区域的富文本内容复制到剪贴板
+         */
+        function copyToClipboard() {
+            const selection = window.getSelection();
+            if (!selection) {
+                alert('无法访问剪贴板，请检查浏览器设置。');
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNode(preview);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            try {
+                if (document.execCommand('copy')) {
+                    alert('已成功复制到剪贴板！\n现在您可以去微信公众号后台粘贴了。');
+                } else {
+                    alert('复制失败，您的浏览器可能不支持此操作。');
+                }
+            } catch (err) {
+                console.error('复制时发生错误:', err);
+                alert('复制失败，请检查浏览器控制台获取更多信息。');
+            }
+            
+            selection.removeAllRanges();
+        }
+
+        // --- 事件监听 ---
+        markdownInput.addEventListener('input', render);
+        copyButton.addEventListener('click', copyToClipboard);
+    </script>
+
+</body>
+</html>
